@@ -4,20 +4,23 @@ from typing import Optional
 from fastmcp import FastMCP
 
 from gsc.accounts import AccountManager, AccountError
+from gsc.retry import with_retry
 
 mcp = FastMCP("mcp-search-console")
 manager = AccountManager()
 
 
 def _safe(fn):
-    """Wrap tool handlers to return structured error strings instead of raising."""
+    """Return structured error dicts instead of raising — keeps MCP responses clean."""
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except AccountError as e:
             return {"error": str(e)}
+        except RuntimeError as e:
+            return {"error": str(e)}
         except Exception as e:
-            return {"error": f"GSC API error: {str(e)}"}
+            return {"error": f"Unexpected error: {type(e).__name__}: {str(e)}"}
     wrapper.__name__ = fn.__name__
     wrapper.__doc__ = fn.__doc__
     return wrapper
@@ -51,7 +54,6 @@ def reauthenticate(account: Optional[str] = None) -> dict:
     has been revoked or you need to switch Google accounts.
     """
     manager.invalidate(account)
-    # Trigger a fresh auth immediately so any OAuth browser prompt happens now
     manager.get_client(account)
     return {"success": True, "account": account or manager._config.get("default")}
 
@@ -65,7 +67,7 @@ def reauthenticate(account: Optional[str] = None) -> dict:
 def list_properties(account: Optional[str] = None) -> list[dict]:
     """List all Google Search Console properties for the specified account."""
     service = manager.get_client(account)
-    response = service.sites().list().execute()
+    response = with_retry(service.sites().list().execute)
     sites = response.get("siteEntry", [])
     return [{"url": s["siteUrl"], "permission_level": s.get("permissionLevel")} for s in sites]
 
@@ -75,7 +77,7 @@ def list_properties(account: Optional[str] = None) -> list[dict]:
 def get_site_details(site_url: str, account: Optional[str] = None) -> dict:
     """Get verification and permission details for a specific GSC property."""
     service = manager.get_client(account)
-    return service.sites().get(siteUrl=site_url).execute()
+    return with_retry(service.sites().get(siteUrl=site_url).execute)
 
 
 # ---------------------------------------------------------------------------
@@ -104,18 +106,14 @@ def get_search_analytics(
         account: Account name from config (uses default if omitted)
     """
     service = manager.get_client(account)
-    dims = dimensions or ["query"]
-    row_limit = min(max(1, row_limit), 1000)
-
     body = {
         "startDate": start_date,
         "endDate": end_date,
-        "dimensions": dims,
-        "rowLimit": row_limit,
+        "dimensions": dimensions or ["query"],
+        "rowLimit": min(max(1, row_limit), 1000),
         "dataState": "all",
     }
-    response = service.searchanalytics().query(siteUrl=site_url, body=body).execute()
-    return response
+    return with_retry(service.searchanalytics().query(siteUrl=site_url, body=body).execute)
 
 
 @mcp.tool()
@@ -131,15 +129,8 @@ def get_performance_overview(
     No dimension breakdown — use get_search_analytics for that.
     """
     service = manager.get_client(account)
-    body = {
-        "startDate": start_date,
-        "endDate": end_date,
-        "dataState": "all",
-    }
-    response = service.searchanalytics().query(siteUrl=site_url, body=body).execute()
-    totals = {
-        "clicks": 0, "impressions": 0, "ctr": 0.0, "position": 0.0, "row_count": 0
-    }
+    body = {"startDate": start_date, "endDate": end_date, "dataState": "all"}
+    response = with_retry(service.searchanalytics().query(siteUrl=site_url, body=body).execute)
     rows = response.get("rows", [])
     if rows:
         r = rows[0]
@@ -149,6 +140,8 @@ def get_performance_overview(
             "ctr": round(r.get("ctr", 0) * 100, 2),
             "position": round(r.get("position", 0), 1),
         }
+    else:
+        totals = {"clicks": 0, "impressions": 0, "ctr": 0.0, "position": 0.0}
     return {"site_url": site_url, "period": f"{start_date} to {end_date}", **totals}
 
 
@@ -179,21 +172,19 @@ def compare_periods(
             "rowLimit": row_limit,
             "dataState": "all",
         }
-        return service.searchanalytics().query(siteUrl=site_url, body=body).execute()
+        return with_retry(service.searchanalytics().query(siteUrl=site_url, body=body).execute)
 
     p1 = fetch(period1_start, period1_end)
     p2 = fetch(period2_start, period2_end)
 
-    # Index period 1 by dimension key for easy comparison
     def key(row):
         return tuple(row.get("keys", []))
 
     p1_index = {key(r): r for r in p1.get("rows", [])}
     p2_index = {key(r): r for r in p2.get("rows", [])}
 
-    all_keys = set(p1_index) | set(p2_index)
     comparison = []
-    for k in all_keys:
+    for k in set(p1_index) | set(p2_index):
         r1 = p1_index.get(k, {})
         r2 = p2_index.get(k, {})
         comparison.append({
@@ -226,19 +217,16 @@ def get_advanced_search_analytics(
     operators: equals, notEquals, contains, notContains, includingRegex, excludingRegex
     """
     service = manager.get_client(account)
-    dims = dimensions or ["query"]
-
     body = {
         "startDate": start_date,
         "endDate": end_date,
-        "dimensions": dims,
+        "dimensions": dimensions or ["query"],
         "rowLimit": min(max(1, row_limit), 1000),
         "dataState": "all",
     }
     if filters:
         body["dimensionFilterGroups"] = [{"filters": filters}]
-
-    return service.searchanalytics().query(siteUrl=site_url, body=body).execute()
+    return with_retry(service.searchanalytics().query(siteUrl=site_url, body=body).execute)
 
 
 @mcp.tool()
@@ -263,7 +251,7 @@ def get_search_by_page(
             {"filters": [{"dimension": "page", "operator": "equals", "expression": page_url}]}
         ],
     }
-    return service.searchanalytics().query(siteUrl=site_url, body=body).execute()
+    return with_retry(service.searchanalytics().query(siteUrl=site_url, body=body).execute)
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +271,7 @@ def inspect_url(
     """
     service = manager.get_client(account)
     body = {"inspectionUrl": page_url, "siteUrl": site_url}
-    return service.urlInspection().index().inspect(body=body).execute()
+    return with_retry(service.urlInspection().index().inspect(body=body).execute)
 
 
 @mcp.tool()
@@ -305,9 +293,9 @@ def batch_inspect_urls(
     for url in page_urls:
         try:
             body = {"inspectionUrl": url, "siteUrl": site_url}
-            result = service.urlInspection().index().inspect(body=body).execute()
+            result = with_retry(service.urlInspection().index().inspect(body=body).execute)
             results.append({"url": url, "result": result})
-        except Exception as e:
+        except (RuntimeError, Exception) as e:
             results.append({"url": url, "error": str(e)})
     return results
 
@@ -321,7 +309,7 @@ def check_indexing_issues(
 ) -> list[dict]:
     """
     Check a list of URLs for indexing problems. Returns a prioritised summary
-    of issues found — more actionable than raw inspect_url output.
+    of issues — more actionable than raw inspect_url output.
     """
     if len(page_urls) > 10:
         return [{"error": "Maximum 10 URLs per call."}]
@@ -331,22 +319,20 @@ def check_indexing_issues(
     for url in page_urls:
         try:
             body = {"inspectionUrl": url, "siteUrl": site_url}
-            raw = service.urlInspection().index().inspect(body=body).execute()
+            raw = with_retry(service.urlInspection().index().inspect(body=body).execute)
             ir = raw.get("inspectionResult", {})
             index_status = ir.get("indexStatusResult", {})
             verdict = index_status.get("verdict", "UNKNOWN")
-            coverage = index_status.get("coverageState", "")
-            last_crawl = index_status.get("lastCrawlTime", "never")
             results.append({
                 "url": url,
                 "verdict": verdict,
-                "coverage_state": coverage,
-                "last_crawled": last_crawl,
+                "coverage_state": index_status.get("coverageState", ""),
+                "last_crawled": index_status.get("lastCrawlTime", "never"),
                 "indexing_allowed": index_status.get("indexingAllowed"),
                 "robots_txt_state": index_status.get("robotsTxtState"),
                 "has_issues": verdict != "PASS",
             })
-        except Exception as e:
+        except (RuntimeError, Exception) as e:
             results.append({"url": url, "error": str(e)})
 
     results.sort(key=lambda x: (0 if x.get("has_issues") else 1))
@@ -362,10 +348,9 @@ def check_indexing_issues(
 def list_sitemaps(site_url: str, account: Optional[str] = None) -> list[dict]:
     """List all sitemaps submitted to GSC for this property."""
     service = manager.get_client(account)
-    response = service.sitemaps().list(siteUrl=site_url).execute()
-    sitemaps = response.get("sitemap", [])
+    response = with_retry(service.sitemaps().list(siteUrl=site_url).execute)
     result = []
-    for s in sitemaps:
+    for s in response.get("sitemap", []):
         errors = int(s.get("errors", 0))
         warnings = int(s.get("warnings", 0))
         result.append({
@@ -387,7 +372,7 @@ def list_sitemaps(site_url: str, account: Optional[str] = None) -> list[dict]:
 def get_sitemap(site_url: str, sitemap_url: str, account: Optional[str] = None) -> dict:
     """Get details and status of a specific sitemap."""
     service = manager.get_client(account)
-    return service.sitemaps().get(siteUrl=site_url, feedpath=sitemap_url).execute()
+    return with_retry(service.sitemaps().get(siteUrl=site_url, feedpath=sitemap_url).execute)
 
 
 @mcp.tool()
@@ -397,14 +382,14 @@ def submit_sitemap(
     sitemap_url: str,
     account: Optional[str] = None,
 ) -> dict:
-    """Submit a sitemap to Google Search Console."""
+    """Submit a sitemap to Google Search Console. Requires GSC_ALLOW_DESTRUCTIVE=true."""
     if not os.environ.get("GSC_ALLOW_DESTRUCTIVE"):
         return {
             "error": "Sitemap submission is disabled by default. "
             "Set GSC_ALLOW_DESTRUCTIVE=true to enable."
         }
     service = manager.get_client(account)
-    service.sitemaps().submit(siteUrl=site_url, feedpath=sitemap_url).execute()
+    with_retry(service.sitemaps().submit(siteUrl=site_url, feedpath=sitemap_url).execute)
     return {"success": True, "submitted": sitemap_url}
 
 
@@ -422,7 +407,7 @@ def delete_sitemap(
             "Set GSC_ALLOW_DESTRUCTIVE=true to enable."
         }
     service = manager.get_client(account)
-    service.sitemaps().delete(siteUrl=site_url, feedpath=sitemap_url).execute()
+    with_retry(service.sitemaps().delete(siteUrl=site_url, feedpath=sitemap_url).execute)
     return {"success": True, "deleted": sitemap_url}
 
 
