@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-search-console"
+name = "mcp-search-console-multi"
 version = "0.1.0"
 description = "Multi-account Google Search Console MCP server"
 readme = "README.md"
@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-search-console = "gsc.server:main"
+mcp-search-console-multi = "gsc.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["gsc"]

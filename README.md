@@ -3,6 +3,8 @@
 Multi-account Google Search Console MCP server. Connect any number of GSC accounts to Claude, Cursor, Codex, or any MCP-compatible AI assistant — and query them by name in the same session.
 
 ```
+# Install:  uvx mcp-search-console-multi
+
 # Ask your AI:
 "Show me the top queries for my-site last month"
 "Compare client-acme's performance between Q1 and Q2"
@@ -43,7 +45,7 @@ cp accounts.example.json ~/.config/mcp-search-console/accounts.json
   "mcpServers": {
     "search-console": {
       "command": "uvx",
-      "args": ["mcp-search-console"],
+      "args": ["mcp-search-console-multi"],
       "env": {
         "GSC_ACCOUNTS_CONFIG": "/Users/you/.config/mcp-search-console/accounts.json"
       }
