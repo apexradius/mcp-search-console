@@ -1,0 +1,19 @@
+{
+  "default": "my-site",
+  "accounts": {
+    "my-site": {
+      "type": "oauth",
+      "client_secrets_file": "/path/to/client_secrets.json",
+      "token_file": "/path/to/my-site.token"
+    },
+    "client-acme": {
+      "type": "service_account",
+      "credentials_file": "/path/to/acme-service-account.json"
+    },
+    "client-beta": {
+      "type": "oauth",
+      "client_secrets_file": "/path/to/client_secrets.json",
+      "token_file": "/path/to/beta.token"
+    }
+  }
+}
