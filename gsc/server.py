@@ -1,3 +1,5 @@
+import functools
+import inspect
 import os
 from typing import Optional
 
@@ -11,7 +13,9 @@ manager = AccountManager()
 
 
 def _safe(fn):
-    """Return structured error dicts instead of raising — keeps MCP responses clean."""
+    """Return structured error dicts instead of raising — keeps MCP responses clean.
+    Preserves the original function signature so fastmcp can build the tool schema."""
+    @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
@@ -21,8 +25,7 @@ def _safe(fn):
             return {"error": str(e)}
         except Exception as e:
             return {"error": f"Unexpected error: {type(e).__name__}: {str(e)}"}
-    wrapper.__name__ = fn.__name__
-    wrapper.__doc__ = fn.__doc__
+    wrapper.__signature__ = inspect.signature(fn)
     return wrapper
 
 
