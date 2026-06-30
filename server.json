@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Ayo-Fam/mcp-search-console",
   "title": "MCP Search Console",
-  "description": "Multi-account Google Search Console MCP server. Query search analytics, inspect URLs, manage sitemaps, and compare performance across multiple GSC accounts from any MCP-compatible AI assistant.",
+  "description": "Multi-account Google Search Console MCP: analytics, URL inspection, sitemaps across named accounts.",
   "repository": {
     "url": "https://github.com/apexradius/mcp-search-console",
     "source": "github"
