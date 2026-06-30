@@ -12,6 +12,7 @@ venv/
 # Credentials — never commit these
 *.json
 !accounts.example.json
+!server.json
 *.token
 credentials/
 

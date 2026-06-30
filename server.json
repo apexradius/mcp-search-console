@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Ayo-Fam/mcp-search-console",
+  "title": "MCP Search Console",
+  "description": "Multi-account Google Search Console MCP server. Query search analytics, inspect URLs, manage sitemaps, and compare performance across multiple GSC accounts from any MCP-compatible AI assistant.",
+  "version": "0.1.3",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "mcp-search-console-multi",
+      "version": "0.1.3",
+      "installInstructions": "uvx mcp-search-console-multi",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/apexradius/mcp-search-console"
+  },
+  "homepage": "https://github.com/apexradius/mcp-search-console",
+  "license": "MIT"
+}

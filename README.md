@@ -190,3 +190,5 @@ Your MCP client connects to `http://your-server:3001/sse`.
 ## License
 
 MIT
+
+<!-- mcp-name: io.github.Ayo-Fam/mcp-search-console -->
