@@ -13,6 +13,49 @@ Multi-account Google Search Console MCP server. Connect any number of GSC accoun
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Client[MCP client] -->|stdio or SSE| Server[gsc/server.py]
+
+    subgraph Account layer
+        Config[accounts.json] --> Accounts[gsc/accounts.py]
+        Accounts --> OAuth[gsc/auth/oauth.py]
+        Accounts --> Service[gsc/auth/service_account.py]
+    end
+
+    Server --> Tools[gsc/tools]
+    Tools --> Accounts
+    Tools --> Retry[gsc/retry.py]
+    Tools --> API[Search Console API]
+    API --> Result[MCP result]
+    Result --> Client
+```
+
+See [docs/architecture.md](docs/architecture.md) for the request sequence and data boundaries.
+
+## Primary Workflow
+
+```mermaid
+flowchart TD
+    Ask([User asks SEO question]) --> Tool[Select MCP tool]
+    Tool --> Account{Account named?}
+    Account -->|yes| Named[Use named account]
+    Account -->|no| Default[Use default account]
+    Named --> Auth[Load credentials]
+    Default --> Auth
+    Auth --> Action{Tool type}
+    Action -->|analytics| Analytics[Search analytics]
+    Action -->|inspection| Inspect[URL inspection]
+    Action -->|sitemap| Sitemap[Sitemap operation]
+    Analytics --> Return[Return result]
+    Inspect --> Return
+    Sitemap --> Return
+```
+
+---
+
 ## Why this one?
 
 Most GSC MCP servers support one account per server process. This one lets you configure multiple accounts (your own sites + client sites) and switch between them per tool call — no restart needed.
@@ -190,5 +233,10 @@ Your MCP client connects to `http://your-server:3001/sse`.
 ## License
 
 MIT
+
+## Reference
+
+- [Start here](docs/start-here.md)
+- [Architecture](docs/architecture.md)
 
 <!-- mcp-name: io.github.Ayo-Fam/mcp-search-console -->
