@@ -1,87 +1,63 @@
 # mcp-search-console
 
-Multi-account Google Search Console MCP server. Connect any number of GSC accounts to Claude, Cursor, Codex, or any MCP-compatible AI assistant — and query them by name in the same session.
+Multi-account Google Search Console MCP server for operators who need one MCP surface across
+multiple sites or clients without restarting the server.
 
-```
-# Install:  uvx mcp-search-console-multi
+Release posture: beta package, version `0.1.3` from [`pyproject.toml`](pyproject.toml).
 
-# Ask your AI:
-"Show me the top queries for my-site last month"
-"Compare client-acme's performance between Q1 and Q2"
-"Check indexing issues on client-beta's 5 product pages"
-```
+## Choose your path
 
----
+| You are... | Start here | Then |
+|---|---|---|
+| Connecting the server to Claude/Codex/Cursor | [docs/start-here.md](docs/start-here.md) | Quick start below |
+| Auditing account routing or destructive guards | [docs/architecture.md](docs/architecture.md) | [`gsc/server.py`](gsc/server.py) |
+| Reviewing packaging or registry metadata | [`pyproject.toml`](pyproject.toml) | [`server.json`](server.json) |
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    Client[MCP client] -->|stdio or SSE| Server[gsc/server.py]
-
-    subgraph Account layer
-        Config[accounts.json] --> Accounts[gsc/accounts.py]
-        Accounts --> OAuth[gsc/auth/oauth.py]
-        Accounts --> Service[gsc/auth/service_account.py]
-    end
-
-    Server --> Tools[gsc/tools]
-    Tools --> Accounts
-    Tools --> Retry[gsc/retry.py]
-    Tools --> API[Search Console API]
-    API --> Result[MCP result]
-    Result --> Client
+  U[AI operator] --> C[MCP client]
+  C --> S[FastMCP server]
+  S --> M[Account manager]
+  M --> F[Accounts config]
+  M --> A[OAuth or service-account auth]
+  S --> R[Retry wrapper]
+  R --> G[Google Search Console API]
+  G --> R --> S
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the request sequence and data boundaries.
-
-## Primary Workflow
+## Request flow
 
 ```mermaid
 flowchart TD
-    Ask([User asks SEO question]) --> Tool[Select MCP tool]
-    Tool --> Account{Account named?}
-    Account -->|yes| Named[Use named account]
-    Account -->|no| Default[Use default account]
-    Named --> Auth[Load credentials]
-    Default --> Auth
-    Auth --> Action{Tool type}
-    Action -->|analytics| Analytics[Search analytics]
-    Action -->|inspection| Inspect[URL inspection]
-    Action -->|sitemap| Sitemap[Sitemap operation]
-    Analytics --> Return[Return result]
-    Inspect --> Return
-    Sitemap --> Return
+  P[Operator asks for analytics or indexing data] --> T[Selected MCP tool]
+  T --> A[Resolve named or default account]
+  A --> B[Build authenticated GSC client]
+  B --> C[Call Search Console endpoint]
+  C --> D{API call succeeds?}
+  D -- yes --> E[Return normalized JSON]
+  D -- retryable --> F[Backoff and retry]
+  F --> D
+  D -- no --> G[Return error payload]
 ```
 
----
+## Quick start
 
-## Why this one?
+1. Install the package.
 
-Most GSC MCP servers support one account per server process. This one lets you configure multiple accounts (your own sites + client sites) and switch between them per tool call — no restart needed.
+```bash
+python -m pip install mcp-search-console-multi
+```
 
-| Feature | This server | Others |
-|---|---|---|
-| Multiple accounts | Yes — named, switchable | No — one per process |
-| OAuth + service account | Both, mixed per account | Usually one type |
-| Auto token refresh | Yes | Sometimes |
-| Rate limit retry | Yes — exponential backoff | No |
-| Destructive op guard | Yes — env flag required | Sometimes |
-| SSE transport (remote) | Yes | Varies |
-
----
-
-## Quickstart (uvx — no clone needed)
-
-**1. Create your accounts config:**
+2. Create the accounts config.
 
 ```bash
 mkdir -p ~/.config/mcp-search-console
 cp accounts.example.json ~/.config/mcp-search-console/accounts.json
-# Edit it — add your accounts
 ```
 
-**2. Add to your MCP client config:**
+3. Register it in your MCP client.
 
 ```json
 {
@@ -97,146 +73,48 @@ cp accounts.example.json ~/.config/mcp-search-console/accounts.json
 }
 ```
 
-**3. Restart your AI client. Done.**
-
----
-
-## Accounts config
-
-Copy `accounts.example.json` and edit it:
-
-```json
-{
-  "default": "my-site",
-  "accounts": {
-    "my-site": {
-      "type": "oauth",
-      "client_secrets_file": "~/.config/mcp-search-console/client_secrets.json",
-      "token_file": "~/.config/mcp-search-console/my-site.token"
-    },
-    "client-acme": {
-      "type": "service_account",
-      "credentials_file": "~/.config/mcp-search-console/acme.json"
-    }
-  }
-}
-```
-
-Set `GSC_ACCOUNTS_CONFIG` to its path, or put it at `~/.config/mcp-search-console/accounts.json` (default).
-
-### OAuth setup
-
-1. [Google Cloud Console](https://console.cloud.google.com/) → create project
-2. Enable the [Search Console API](https://console.cloud.google.com/apis/library/searchconsole.googleapis.com)
-3. Credentials → Create → OAuth client ID → Desktop app
-4. Download as `client_secrets.json`
-5. On first use, a browser window opens for you to authorise — token is saved automatically
-
-### Service account setup
-
-1. Google Cloud Console → Credentials → Create → Service Account
-2. Keys tab → Add Key → JSON → download
-3. In GSC, add the service account email as a user on each property
-
----
-
-## Using multiple accounts
-
-Every tool accepts an optional `account` parameter. Omit it to use your default.
-
-```
-"Show top queries for my-site"                    # uses default
-"Show top queries for client-acme"                # uses named account
-"Compare client-beta performance Jan vs Feb"      # named account
-```
-
-Or set the default mid-session:
-
-```
-"Switch to client-acme as my default account"
-```
-
----
-
 ## Available tools
 
-### Account management
-| Tool | What it does |
-|---|---|
-| `list_accounts` | Show all configured accounts and which is default |
-| `set_default_account` | Change the default account |
-| `reauthenticate` | Re-run OAuth flow or reload credentials for an account |
-
-### Properties
-| Tool | What it does |
-|---|---|
-| `list_properties` | List all GSC properties |
-| `get_site_details` | Verification + permission details for a property |
-
-### Search analytics
-| Tool | What it does |
-|---|---|
-| `get_search_analytics` | Queries, pages, clicks, impressions, CTR, position |
-| `get_performance_overview` | Site-level totals for a period |
-| `compare_periods` | Side-by-side comparison of two date ranges |
-| `get_advanced_search_analytics` | Analytics with dimension filters (country, device, etc.) |
-| `get_search_by_page` | Queries driving traffic to a specific page |
-
-### URL inspection
-| Tool | What it does |
-|---|---|
-| `inspect_url` | Indexing status, crawl date, mobile usability, rich results |
-| `batch_inspect_urls` | Inspect up to 10 URLs at once |
-| `check_indexing_issues` | Prioritised issue summary across multiple URLs |
-
-### Sitemaps
-| Tool | What it does |
-|---|---|
-| `list_sitemaps` | All submitted sitemaps with status |
-| `get_sitemap` | Details for a specific sitemap |
-| `submit_sitemap` | Submit a new sitemap *(requires `GSC_ALLOW_DESTRUCTIVE=true`)* |
-| `delete_sitemap` | Remove a sitemap *(requires `GSC_ALLOW_DESTRUCTIVE=true`)* |
-
----
-
-## Environment variables
-
-| Variable | Default | Description |
+| Tool group | Tools | Purpose |
 |---|---|---|
-| `GSC_ACCOUNTS_CONFIG` | `~/.config/mcp-search-console/accounts.json` | Path to your accounts config |
-| `GSC_ALLOW_DESTRUCTIVE` | unset | Set to `true` to enable sitemap submit/delete |
-| `MCP_TRANSPORT` | `stdio` | Set to `sse` for remote/Docker deployment |
-| `MCP_HOST` | `127.0.0.1` | SSE bind host (use `0.0.0.0` for all interfaces) |
-| `MCP_PORT` | `3001` | SSE bind port |
+| Account routing | `list_accounts`, `set_default_account`, `reauthenticate` | Inspect accounts, switch defaults, refresh auth |
+| Property inventory | `list_properties`, `get_site_details` | Discover accessible properties and permissions |
+| Search analytics | `get_search_analytics`, `get_performance_overview`, `compare_periods`, `get_advanced_search_analytics`, `get_search_by_page` | Query search-performance data |
+| Inspection and sitemaps | `inspect_url`, `batch_inspect_urls`, `check_indexing_issues`, `list_sitemaps`, `get_sitemap`, `submit_sitemap`, `delete_sitemap` | Inspect indexing and manage sitemap submissions |
 
----
+`submit_sitemap` and `delete_sitemap` stay behind the destructive flag documented in
+[docs/start-here.md](docs/start-here.md).
 
-## Remote deployment (Docker / VPS)
+## Runtime proof
 
-```bash
-docker build -t mcp-search-console .
+| Claim | Proof |
+|---|---|
+| Package entry point is stable | `mcp-search-console-multi = "gsc.server:main"` in [`pyproject.toml`](pyproject.toml) |
+| Multi-account routing is first-class | `AccountManager()` and `_get_manager()` in [`gsc/server.py`](gsc/server.py) |
+| Search Console calls are retried | `with_retry()` in [`gsc/server.py`](gsc/server.py) and [`gsc/retry.py`](gsc/retry.py) |
+| Auth is file-driven per account | [`accounts.example.json`](accounts.example.json) and [`gsc/accounts.py`](gsc/accounts.py) |
 
-docker run \
-  -e MCP_TRANSPORT=sse \
-  -e MCP_HOST=0.0.0.0 \
-  -e MCP_PORT=3001 \
-  -e GSC_ACCOUNTS_CONFIG=/config/accounts.json \
-  -v /path/to/config:/config \
-  -p 3001:3001 \
-  mcp-search-console
-```
+## Repo map
 
-Your MCP client connects to `http://your-server:3001/sse`.
+| Path | Purpose |
+|---|---|
+| [`gsc/server.py`](gsc/server.py) | FastMCP tool surface and response normalization |
+| [`gsc/accounts.py`](gsc/accounts.py) | Account config, auth loading, client construction |
+| [`gsc/auth/`](gsc/auth/) | OAuth and service-account auth implementations |
+| [`gsc/retry.py`](gsc/retry.py) | Retry behavior for transient API failures |
+| [`docs/start-here.md`](docs/start-here.md) | Setup, env, validation, common failures |
+| [`docs/architecture.md`](docs/architecture.md) | Component map and runtime lifecycle |
 
----
+## Validation
+
+| Check | Command |
+|---|---|
+| Import compiles | `python -m compileall gsc` |
+| Package builds | `python -m build` |
+| README/docs links stay local | `rg '\\]\\(([^)]+\\.md)\\)' README.md docs/` |
 
 ## License
 
 MIT
-
-## Reference
-
-- [Start here](docs/start-here.md)
-- [Architecture](docs/architecture.md)
 
 <!-- mcp-name: io.github.Ayo-Fam/mcp-search-console -->
