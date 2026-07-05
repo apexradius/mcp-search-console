@@ -5,19 +5,18 @@ on:
     branches: [main]
   pull_request:
 
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv run ruff check gsc/
-      - run: uv run ruff format --check gsc/
+permissions:
+  contents: read
 
-  build:
+jobs:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv pip install --system -e .
-      - run: python -c "from gsc.server import mcp; print('Server imports OK')"
+      - uses: astral-sh/setup-uv@v5
+      - run: uv venv --python 3.11
+      - run: uv pip install -e .
+      - name: Lint
+        run: uvx ruff check gsc/
+      - name: Test
+        run: uv run python -m unittest discover -s tests -v
