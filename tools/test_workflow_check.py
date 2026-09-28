@@ -19,6 +19,39 @@ class WorkflowChecks(unittest.TestCase):
         return inspect(self.root, **kwargs)[0]
     def link(self, value):
         (self.root/'INDEX.md').write_text(value)
+    def test_cli_heading_fragments(self):
+        checker = Path(__file__).with_name('check_workflow.py')
+        cases = [
+            ('# Example\n', 'example', True),
+            ('```md\n# Example\n```\n', 'example', False),
+            ('~~~md\n# Example\n~~~\n', 'example', False),
+            ('    # Example\n', 'example', False),
+            ('<!--\n# Example\n-->\n', 'example', False),
+            ('> ```md\n> # Example\n> ```\n', 'example', False),
+            ('Example\n=======\n', 'example', True),
+            ('Example\n-------\n', 'example', True),
+            ('Multi\nline\n----\n', 'multiline', True),
+            ('> # Example\n', 'example', True),
+            ('- # Example\n', 'example', True),
+            ('# Example\n## Example\n', 'example-1', True),
+            ('# Example\n## Example\n', 'example-2', False),
+            ('# *Example*\n> ## `Example`\n\nExample!\n---\n', 'example-2', True),
+            ('# Example\n# Example-1\n# Example\n# Example-1\n', 'example-2', True),
+            ('# Example\n# Example-1\n# Example\n# Example-1\n', 'example-1-1', True),
+            ('# *Hello* [`API`](https://example.invalid) &amp; <em>world</em>!\n', 'hello-api--world', True),
+            ('# Café 中文_version + ♥\n', 'caf%C3%A9-%E4%B8%AD%E6%96%87_version--', True),
+            ('# ![Example](image.png) Title\n', '-title', True),
+        ]
+        for body, fragment, accepted in cases:
+            for same_file in (False, True):
+                with self.subTest(body=body, fragment=fragment, same_file=same_file):
+                    target = '' if same_file else 'docs/workflow/API.md'
+                    self.link((body + '\n' if same_file else '') + f'[go]({target}#{fragment})\n')
+                    (self.root/'docs/workflow/API.md').write_text(body)
+                    result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, text=True)
+                    self.assertEqual(accepted, result.returncode == 0, result.stdout + result.stderr)
+                    if not accepted:
+                        self.assertIn('missing anchor:', result.stdout)
     def test_valid_repository_relative_navigation(self):
         self.link('[rules](docs/workflow/AGENTS.md#context)')
         self.assertEqual([], self.errors())
