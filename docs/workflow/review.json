@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "complete": false,
+  "scope": "Search Console MCP: portable document navigation and source-bound review continuity; no product runtime changes.",
+  "reviewed_at": "2026-09-28T15:22:01.527451+00:00",
+  "source_revision": "7b77d888e71197486a67815d3462f66c80c2036f",
+  "files": {
+    "README.md": "0f9adabf1c896a16c7e1a60c6d23b604fb5b07f30fb182207bc3aed8c108eddb",
+    "prompt.md": "f8c8b4c9b2353a42f214aabc86550ab6c7020ac6dd574407adb24dadbb509738",
+    "INDEX.md": "3572c22568b9bd0c83c267dfadee32bd6554d9c60a2ecaaa3c95d7625a7504b3",
+    "docs/workflow/HANDOFFS.md": "7b327b56c42b8375563b974daebc0b478109cd8daf01d773c797ebd18339d7b2"
+  },
+  "stages": {
+    "local": {
+      "required": true,
+      "status": "pending",
+      "evidence": "Run tracked navigation, review consistency, checker fixtures and repository-required checks before delivery."
+    },
+    "ci": {
+      "required": true,
+      "status": "pending",
+      "evidence": "Current candidate hosted checks not yet observed."
+    },
+    "merge": {
+      "required": true,
+      "status": "pending",
+      "evidence": "Current candidate not delivered."
+    },
+    "deployment": {
+      "required": false,
+      "status": "not_applicable",
+      "evidence": "Documentation-only scope; no product release authorized by this record."
+    },
+    "knowledge": {
+      "required": true,
+      "status": "pending",
+      "evidence": "Canonical documentation prepared; portfolio summary closeout remains pending."
+    }
+  }
+}
