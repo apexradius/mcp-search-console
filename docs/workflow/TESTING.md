@@ -30,3 +30,7 @@ Inspected means source/test definitions were read. Locally verified means the na
 ## Continue
 
 Return to [INDEX.md](../../INDEX.md) and finish all routes relevant to the latest task before acting. After verification, update affected owning facts, REPORT and HANDOFFS.
+
+## Document checker setup
+
+The navigation checks use CommonMark parsing to distinguish rendered links from code examples. In a Python virtual environment, install the pinned validation dependencies with `python -m pip install -r tools/requirements-workflow.txt` before running the document checkers and their fixtures. CI installs the same pins.
