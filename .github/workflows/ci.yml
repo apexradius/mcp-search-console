@@ -18,6 +18,9 @@ jobs:
       - run: uv venv --python 3.11
       - run: uv pip install -e .
       - name: Lint
-        run: uvx ruff check gsc/
+        # ruff is pinned: 0.16 expanded the default rule selection, which fails
+        # the pre-existing gsc/ sources on an otherwise unchanged tree. Lifting
+        # the pin requires a lint-conformance pass over gsc/ in its own change.
+        run: uvx ruff@0.15.0 check gsc/
       - name: Test
         run: uv run python -m unittest discover -s tests -v
