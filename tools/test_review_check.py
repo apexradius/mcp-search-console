@@ -54,7 +54,7 @@ class ReviewChecks(unittest.TestCase):
         self.assertTrue(self.errors())
     def test_bad_shape_timestamp_revision_and_escape(self):
         original=deepcopy(self.record)
-        for key,value in [('reviewed_at','yesterday'),('source_revision','main'),('complete','true'),('files',{'../outside':'0'*64}),('stages',[])]:
+        for key,value in [('reviewed_at','yesterday'),('source_revision','main'),('complete','true'),('version',True),('version',1.0),('files',{'../outside':'0'*64}),('stages',[])]:
             with self.subTest(key=key):
                 self.record=deepcopy(original)
                 self.record[key]=value

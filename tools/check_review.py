@@ -22,7 +22,7 @@ def inspect_review(root):
             raise ValueError('expected an object')
     except (OSError, ValueError) as exc:
         return [f'review snapshot unavailable: {exc}']
-    if record.get('version') != 1 or type(record.get('complete')) is not bool:
+    if type(record.get('version')) is not int or record.get('version') != 1 or type(record.get('complete')) is not bool:
         errors.append('review version must be 1 and complete must be boolean')
     if not isinstance(record.get('scope'), str) or not record['scope'].strip():
         errors.append('review scope is required')
