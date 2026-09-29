@@ -6,7 +6,7 @@ The 8 primary-source hashes recorded in the prior review still match this candid
 
 ## Previously source-challenged scenarios
 
-### Recover an implicit OAuth profile after401
+### Recover an implicit OAuth profile after a 401
 
 Reader recovery: Dossier originally overpromised token deletion. Corrected docs distinguish always-cleared client cache, explicit-type token unlink and omitted-type OAuth construction; fresh consent is not guaranteed. No credentials opened.
 

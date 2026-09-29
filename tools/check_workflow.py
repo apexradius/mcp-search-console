@@ -8,10 +8,10 @@ from pathlib import Path
 import subprocess
 import sys
 from urllib.parse import unquote, urlsplit
+from markdown_links import heading_anchors, navigation_links
 
 ROLES = 'AGENTS README HANDOFFS SECURITY SECRETS PRD ARCHITECTURE DESIGN WIREFRAMES CODE_STYLE DATABASE API TESTING MAINTENANCE CAPABILITIES REFERENCES REPORT'.split()
 CORE = ['prompt.md', 'INDEX.md'] + [f'docs/workflow/{n}.md' for n in ['AGENTS', 'HANDOFFS', 'TESTING', 'REFERENCES']]
-from markdown_links import heading_anchors, navigation_links
 
 def exact_path(path):
     if not path.exists():
