@@ -24,6 +24,7 @@ Current main candidate 7b77d88 is the 2026-09-16 CI-gate merge. July 5 added her
 The latest user request selects the actual task. These proposed maintenance priorities are not an approved feature roadmap, provider action or automatic queue. If the user only says “read and begin,” reconcile these findings against the current candidate and report the smallest useful next action; do not resume completed documentation adoption or replay an old submission.
 
 5. Reauthentication has inconsistent default-type handling: building a profile with omitted type uses OAuth, but invalidation only unlinks an explicit OAuth profile token. Inspect the selected profile metadata within authorized recovery scope and test explicit/implicit OAuth plus service-account branches before promising a forced new login. Do not inspect or delete token values just to validate documentation.
+6. Live-product acceptance remains blocked. Unavailable surface/access: read-only Google Search Console account and property access via the authorized API client; not provided in this delivery session. Live GSC validation was not performed and acceptance remains blocked pending that access.
 
 ## Next handoff contract
 

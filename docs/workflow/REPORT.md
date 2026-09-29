@@ -29,7 +29,7 @@ Current main candidate 7b77d88 is the 2026-09-16 CI-gate merge. July 5 added her
 
 ## Evidence limits and value
 
-This reconstruction makes the next task’s interfaces, boundaries and prior intent recoverable. It does not establish new customer value, provider success or a deployed fix. No current product build, account request, browser launch, private corpus read, publish or release was performed. Structural document validation and source-grounded scenario read-through are recorded separately from product acceptance. [TESTING](TESTING.md) identifies the additional proof a future implementation needs.
+This reconstruction makes the next task’s interfaces, boundaries and prior intent recoverable. It does not establish new customer value, provider success or a deployed fix. No current product build, account request, browser launch, private corpus read, publish or release was performed. Structural document validation and source-grounded scenario read-through are recorded separately from product acceptance. Live-product validation is required for every PR, and a docs-only exception is not accepted. Unavailable surface/access: read-only Google Search Console account and property access via the authorized API client; not provided in this delivery session. Live GSC validation was not performed and acceptance remains blocked pending that access. No simulated GSC data stands in for it. [TESTING](TESTING.md) identifies the additional proof a future implementation needs.
 
 ## Supporting sources
 
