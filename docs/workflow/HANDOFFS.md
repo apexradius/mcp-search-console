@@ -37,3 +37,12 @@ Record the concrete requested outcome, exact repository/candidate, selected cond
 ## Continue
 
 Return to [INDEX.md](../../INDEX.md) and finish all routes relevant to the latest task before acting. After verification, update affected owning facts, REPORT and HANDOFFS.
+
+
+## 2026-10-24: concise project guidance
+
+Project startup now routes to task-relevant documents. Product boundaries remain in
+AGENTS; detailed conventions, verification and security contracts stay in their owning
+documents. The current runtime catalog selects skills when needed. This documentation
+change preserves runtime code, provider access and existing product acceptance limits.
+The owner authorized reviewed PR delivery; checks and independent review precede merge.
