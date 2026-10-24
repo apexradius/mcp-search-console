@@ -40,3 +40,20 @@ This reconstruction makes the next task’s interfaces, boundaries and prior int
 ## Continue
 
 Return to [INDEX.md](../../INDEX.md) and finish all routes relevant to the latest task before acting. After verification, update affected owning facts, REPORT and HANDOFFS.
+
+
+## 2026-10-24: concise project guidance
+
+Project startup now routes to task-relevant documents. Product boundaries remain in
+AGENTS; detailed conventions, verification and security contracts stay in their owning
+documents. The current runtime catalog selects skills when needed. This documentation
+change preserves runtime code, provider access and existing product acceptance limits.
+The owner authorized reviewed PR delivery; checks and independent review precede merge.
+
+Validation: 25 existing document-checker fixtures passed. Tracked link/navigation
+and review-snapshot checks are rerun after final metadata updates. Product live-acceptance
+limits remain unchanged in the review snapshot; no provider call or deployment was made.
+
+Independent read-only GLM-5.3/high review confirmed the removed project conventions
+remain in CODE_STYLE and product acceptance blockers are retained. Its one wording
+finding was fixed: the link now describes task workflow guidance, not a retired selector.
