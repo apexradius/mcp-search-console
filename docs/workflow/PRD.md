@@ -29,7 +29,7 @@ FastMCP server -> lazy AccountManager -> cached Google webmasters v3 client -> e
 
 ## Current requirement debt
 
-1. Strict destructive-flag parsing is absent. 2. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 3. Current tests cover guards and registration rather than provider response semantics. 4. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
+1. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 2. Current tests cover guards and registration rather than provider response semantics. 3. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
 
 Classify a future statement as original requirement, later amendment, observed implementation, inferred rationale or proposed change. Preserve the distinction: source behavior does not silently repeal an original promise, and a plausible rationale is not a recorded decision.
 

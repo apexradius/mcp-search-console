@@ -5,15 +5,15 @@
 | Question | Answer |
 | --- | --- |
 | **Whom?** | SEO analyst investigating explicitly authorized Search Console properties. |
-| **What?** | GSC_ALLOW_DESTRUCTIVE is checked for nonempty presence, not parsed as the literal true: a value such as false still enables the code path. |
+| **What?** | GSC_ALLOW_DESTRUCTIVE requires an explicit case-insensitive trimmed true; false, 0, yes and missing values deny sitemap submit/delete before provider access. |
 | **Where?** | gsc/server.py, tests/test_server.py. |
 | **Why it exists?** | Search Console multi-account MCP needs this document to identify the trust boundary before the first side effect. |
-| **Why this approach?** | GSC_ALLOW_DESTRUCTIVE is checked for nonempty presence, not parsed as the literal true: a value such as false still enables the code path. |
+| **Why this approach?** | GSC_ALLOW_DESTRUCTIVE requires an explicit case-insensitive trimmed true; false, 0, yes and missing values deny sitemap submit/delete before provider access. |
 | **Why it matters?** | Credential profile and site_url are distinct inputs. |
 
 ## Trust boundary
 
-GSC_ALLOW_DESTRUCTIVE is checked for nonempty presence, not parsed as the literal true: a value such as false still enables the code path. Treat this as a known implementation gap; actual operator approval is separate. Reauthenticate may delete a token and rebuild authentication; deletion occurs only for an explicit type="oauth" profile with an existing token_file. An omitted type still builds an OAuth client but does not trigger that unlink branch, so fresh consent is not guaranteed. set_default_account writes configuration. SSE has no separately implemented application authentication in this source. Read-only reports still expose private site data.
+GSC_ALLOW_DESTRUCTIVE is parsed as an explicit case-insensitive trimmed literal true before sitemap submit or delete; false, 0, yes and missing values deny the operation before any provider access. Actual operator approval is separate. Reauthenticate may delete a token and rebuild authentication; deletion occurs only for an explicit type="oauth" profile with an existing token_file. An omitted type still builds an OAuth client but does not trigger that unlink branch, so fresh consent is not guaranteed. set_default_account writes configuration. SSE has no separately implemented application authentication in this source. Read-only reports still expose private site data.
 
 ## Protected product behavior
 
