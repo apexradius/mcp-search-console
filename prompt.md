@@ -37,6 +37,6 @@ Select relevant skills from the active runtime's current catalog and instruction
 
 ## First unresolved work
 
-1. Strict destructive-flag parsing is absent. 2. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 3. Current tests cover guards and registration rather than provider response semantics. 4. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
+1. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 2. Current tests cover guards and registration rather than provider response semantics. 3. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
 
 Before implementation, state the requested outcome, smallest useful change, evidence required and stop condition. Verify the actual result, update canonical sources and HANDOFFS, and leave knowledge events honest about freshness.

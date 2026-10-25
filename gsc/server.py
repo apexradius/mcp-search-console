@@ -1,15 +1,14 @@
 import os
-from typing import Optional
 
 from fastmcp import FastMCP
 
-from gsc.accounts import AccountManager, AccountError
+from gsc.accounts import AccountError, AccountManager
 from gsc.retry import with_retry
 
 mcp = FastMCP("mcp-search-console")
 
 # Lazy-loaded — avoids crashing at import time when no config is present yet
-_manager: Optional[AccountManager] = None
+_manager: AccountManager | None = None
 
 
 def _get_manager() -> AccountManager:
@@ -22,12 +21,13 @@ def _get_manager() -> AccountManager:
 def _err(e: Exception) -> dict:
     if isinstance(e, (AccountError, RuntimeError)):
         return {"error": str(e)}
-    return {"error": f"{type(e).__name__}: {str(e)}"}
+    return {"error": f"{type(e).__name__}: {e!s}"}
 
 
 # ---------------------------------------------------------------------------
 # Account management tools
 # ---------------------------------------------------------------------------
+
 
 @mcp.tool()
 def list_accounts() -> list[dict]:
@@ -49,7 +49,7 @@ def set_default_account(account: str) -> dict:
 
 
 @mcp.tool()
-def reauthenticate(account: Optional[str] = None) -> dict:
+def reauthenticate(account: str | None = None) -> dict:
     """
     Force re-authentication for an account. Clears the cached token and re-runs
     the OAuth flow (or reloads service account credentials). Useful when a token
@@ -68,8 +68,9 @@ def reauthenticate(account: Optional[str] = None) -> dict:
 # GSC property tools
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
-def list_properties(account: Optional[str] = None) -> list[dict]:
+def list_properties(account: str | None = None) -> list[dict]:
     """List all Google Search Console properties for the specified account."""
     try:
         service = _get_manager().get_client(account)
@@ -81,7 +82,7 @@ def list_properties(account: Optional[str] = None) -> list[dict]:
 
 
 @mcp.tool()
-def get_site_details(site_url: str, account: Optional[str] = None) -> dict:
+def get_site_details(site_url: str, account: str | None = None) -> dict:
     """Get verification and permission details for a specific GSC property."""
     try:
         service = _get_manager().get_client(account)
@@ -94,14 +95,15 @@ def get_site_details(site_url: str, account: Optional[str] = None) -> dict:
 # Search analytics tools
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
 def get_search_analytics(
     site_url: str,
     start_date: str,
     end_date: str,
-    dimensions: Optional[list[str]] = None,
+    dimensions: list[str] | None = None,
     row_limit: int = 25,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """
     Fetch search analytics data (clicks, impressions, CTR, position).
@@ -133,7 +135,7 @@ def get_performance_overview(
     site_url: str,
     start_date: str,
     end_date: str,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """
     Get a high-level performance summary: total clicks, impressions, CTR, average position.
@@ -166,9 +168,9 @@ def compare_periods(
     period1_end: str,
     period2_start: str,
     period2_end: str,
-    dimensions: Optional[list[str]] = None,
+    dimensions: list[str] | None = None,
     row_limit: int = 25,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """
     Compare search performance between two date ranges.
@@ -201,13 +203,19 @@ def compare_periods(
         for k in set(p1_index) | set(p2_index):
             r1 = p1_index.get(k, {})
             r2 = p2_index.get(k, {})
-            comparison.append({
-                "keys": list(k),
-                "period1": {m: r1.get(m, 0) for m in ["clicks", "impressions", "ctr", "position"]},
-                "period2": {m: r2.get(m, 0) for m in ["clicks", "impressions", "ctr", "position"]},
-                "delta_clicks": r2.get("clicks", 0) - r1.get("clicks", 0),
-                "delta_impressions": r2.get("impressions", 0) - r1.get("impressions", 0),
-            })
+            comparison.append(
+                {
+                    "keys": list(k),
+                    "period1": {
+                        m: r1.get(m, 0) for m in ["clicks", "impressions", "ctr", "position"]
+                    },
+                    "period2": {
+                        m: r2.get(m, 0) for m in ["clicks", "impressions", "ctr", "position"]
+                    },
+                    "delta_clicks": r2.get("clicks", 0) - r1.get("clicks", 0),
+                    "delta_impressions": r2.get("impressions", 0) - r1.get("impressions", 0),
+                }
+            )
 
         comparison.sort(key=lambda x: abs(x["delta_clicks"]), reverse=True)
         return {"dimensions": dims, "rows": comparison[:row_limit]}
@@ -220,10 +228,10 @@ def get_advanced_search_analytics(
     site_url: str,
     start_date: str,
     end_date: str,
-    dimensions: Optional[list[str]] = None,
-    filters: Optional[list[dict]] = None,
+    dimensions: list[str] | None = None,
+    filters: list[dict] | None = None,
     row_limit: int = 25,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """
     Advanced search analytics with dimension filters.
@@ -254,7 +262,7 @@ def get_search_by_page(
     start_date: str,
     end_date: str,
     row_limit: int = 25,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """Get search queries driving traffic to a specific page URL."""
     try:
@@ -278,11 +286,12 @@ def get_search_by_page(
 # URL inspection tools
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
 def inspect_url(
     site_url: str,
     page_url: str,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """
     Inspect a URL's indexing status, last crawl date, mobile usability,
@@ -300,7 +309,7 @@ def inspect_url(
 def batch_inspect_urls(
     site_url: str,
     page_urls: list[str],
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> list[dict]:
     """
     Inspect multiple URLs at once. Returns one result per URL.
@@ -327,7 +336,7 @@ def batch_inspect_urls(
 def check_indexing_issues(
     site_url: str,
     page_urls: list[str],
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> list[dict]:
     """
     Check a list of URLs for indexing problems. Returns a prioritised summary
@@ -345,18 +354,20 @@ def check_indexing_issues(
                 ir = raw.get("inspectionResult", {})
                 index_status = ir.get("indexStatusResult", {})
                 verdict = index_status.get("verdict", "UNKNOWN")
-                results.append({
-                    "url": url,
-                    "verdict": verdict,
-                    "coverage_state": index_status.get("coverageState", ""),
-                    "last_crawled": index_status.get("lastCrawlTime", "never"),
-                    "indexing_allowed": index_status.get("indexingAllowed"),
-                    "robots_txt_state": index_status.get("robotsTxtState"),
-                    "has_issues": verdict != "PASS",
-                })
+                results.append(
+                    {
+                        "url": url,
+                        "verdict": verdict,
+                        "coverage_state": index_status.get("coverageState", ""),
+                        "last_crawled": index_status.get("lastCrawlTime", "never"),
+                        "indexing_allowed": index_status.get("indexingAllowed"),
+                        "robots_txt_state": index_status.get("robotsTxtState"),
+                        "has_issues": verdict != "PASS",
+                    }
+                )
             except Exception as e:
                 results.append({"url": url, "error": str(e)})
-        results.sort(key=lambda x: (0 if x.get("has_issues") else 1))
+        results.sort(key=lambda x: 0 if x.get("has_issues") else 1)
         return results
     except Exception as e:
         return [_err(e)]
@@ -366,8 +377,9 @@ def check_indexing_issues(
 # Sitemap tools
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
-def list_sitemaps(site_url: str, account: Optional[str] = None) -> list[dict]:
+def list_sitemaps(site_url: str, account: str | None = None) -> list[dict]:
     """List all sitemaps submitted to GSC for this property."""
     try:
         service = _get_manager().get_client(account)
@@ -376,24 +388,26 @@ def list_sitemaps(site_url: str, account: Optional[str] = None) -> list[dict]:
         for s in response.get("sitemap", []):
             errors = int(s.get("errors", 0))
             warnings = int(s.get("warnings", 0))
-            result.append({
-                "path": s.get("path"),
-                "last_submitted": s.get("lastSubmitted"),
-                "last_downloaded": s.get("lastDownloaded"),
-                "is_pending": s.get("isPending"),
-                "is_sitemaps_index": s.get("isSitemapsIndex"),
-                "type": s.get("type"),
-                "warnings": warnings,
-                "errors": errors,
-                "status": "Error" if errors > 0 else ("Has warnings" if warnings > 0 else "OK"),
-            })
+            result.append(
+                {
+                    "path": s.get("path"),
+                    "last_submitted": s.get("lastSubmitted"),
+                    "last_downloaded": s.get("lastDownloaded"),
+                    "is_pending": s.get("isPending"),
+                    "is_sitemaps_index": s.get("isSitemapsIndex"),
+                    "type": s.get("type"),
+                    "warnings": warnings,
+                    "errors": errors,
+                    "status": "Error" if errors > 0 else ("Has warnings" if warnings > 0 else "OK"),
+                }
+            )
         return result
     except Exception as e:
         return _err(e)
 
 
 @mcp.tool()
-def get_sitemap(site_url: str, sitemap_url: str, account: Optional[str] = None) -> dict:
+def get_sitemap(site_url: str, sitemap_url: str, account: str | None = None) -> dict:
     """Get details and status of a specific sitemap."""
     try:
         service = _get_manager().get_client(account)
@@ -406,11 +420,13 @@ def get_sitemap(site_url: str, sitemap_url: str, account: Optional[str] = None) 
 def submit_sitemap(
     site_url: str,
     sitemap_url: str,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """Submit a sitemap to Google Search Console. Requires GSC_ALLOW_DESTRUCTIVE=true."""
-    if not os.environ.get("GSC_ALLOW_DESTRUCTIVE"):
-        return {"error": "Sitemap submission is disabled. Set GSC_ALLOW_DESTRUCTIVE=true to enable."}
+    if os.environ.get("GSC_ALLOW_DESTRUCTIVE", "").strip().lower() != "true":
+        return {
+            "error": "Sitemap submission is disabled. Set GSC_ALLOW_DESTRUCTIVE=true to enable."
+        }
     try:
         service = _get_manager().get_client(account)
         with_retry(service.sitemaps().submit(siteUrl=site_url, feedpath=sitemap_url).execute)
@@ -423,10 +439,10 @@ def submit_sitemap(
 def delete_sitemap(
     site_url: str,
     sitemap_url: str,
-    account: Optional[str] = None,
+    account: str | None = None,
 ) -> dict:
     """Delete a sitemap from Google Search Console. Requires GSC_ALLOW_DESTRUCTIVE=true."""
-    if not os.environ.get("GSC_ALLOW_DESTRUCTIVE"):
+    if os.environ.get("GSC_ALLOW_DESTRUCTIVE", "").strip().lower() != "true":
         return {"error": "Sitemap deletion is disabled. Set GSC_ALLOW_DESTRUCTIVE=true to enable."}
     try:
         service = _get_manager().get_client(account)
@@ -439,6 +455,7 @@ def delete_sitemap(
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main():
     transport = os.environ.get("MCP_TRANSPORT", "stdio")

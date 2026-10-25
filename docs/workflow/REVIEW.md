@@ -16,9 +16,9 @@ Result: pass_after_document_correction
 
 Evidence level: inspected
 
-### Use GSC_ALLOW_DESTRUCTIVE=false and inspect eleven URLs before a sitemap update
+### Require explicit GSC_ALLOW_DESTRUCTIVE=true and inspect eleven URLs before a sitemap update
 
-Reader recovery: Nonempty false still enables both sitemap write guards, independently of actual approval. Batch handlers reject>10 locally; this is not a verified provider-wide limit. Preserve exact property/profile and split authorized reads; submission never proves indexing.
+Reader recovery: The prior nonempty-presence check let a value such as false enable both sitemap write guards; both now parse an explicit case-insensitive trimmed true, so false, 0, yes and missing values deny before provider access, independently of actual approval. Batch handlers reject>10 locally; this is not a verified provider-wide limit. Preserve exact property/profile and split authorized reads; submission never proves indexing.
 
 Source and dossier evidence: ["gsc/server.py:submit_sitemap", "gsc/server.py:delete_sitemap", "gsc/server.py:batch_inspect_urls", "gsc/server.py:check_indexing_issues", "docs/workflow/API.md", "prompt.md"]
 

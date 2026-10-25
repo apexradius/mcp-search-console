@@ -41,13 +41,13 @@ These signatures are transcribed from the current Python handler definitions. Op
 
 ## Authorization and error limits
 
-GSC_ALLOW_DESTRUCTIVE is checked for nonempty presence, not parsed as the literal true: a value such as false still enables the code path. Treat this as a known implementation gap; actual operator approval is separate. Reauthenticate may delete a token and rebuild authentication; deletion occurs only for an explicit type="oauth" profile with an existing token_file. An omitted type still builds an OAuth client but does not trigger that unlink branch, so fresh consent is not guaranteed. set_default_account writes configuration. SSE has no separately implemented application authentication in this source. Read-only reports still expose private site data.
+GSC_ALLOW_DESTRUCTIVE is parsed as an explicit case-insensitive trimmed literal true before sitemap submit or delete; false, 0, yes and missing values deny the operation before any provider access. Actual operator approval is separate. Reauthenticate may delete a token and rebuild authentication; deletion occurs only for an explicit type="oauth" profile with an existing token_file. An omitted type still builds an OAuth client but does not trigger that unlink branch, so fresh consent is not guaranteed. set_default_account writes configuration. SSE has no separately implemented application authentication in this source. Read-only reports still expose private site data.
 
 ## Contract gaps
 
-1. Strict destructive-flag parsing is absent. 2. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 3. Current tests cover guards and registration rather than provider response semantics. 4. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
+1. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 2. Current tests cover guards and registration rather than provider response semantics. 3. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
 
-5. Reauthentication has inconsistent default-type handling: building a profile with omitted type uses OAuth, but invalidation only unlinks an explicit OAuth profile token. Inspect the selected profile metadata within authorized recovery scope and test explicit/implicit OAuth plus service-account branches before promising a forced new login. Do not inspect or delete token values just to validate documentation.
+4. Reauthentication has inconsistent default-type handling: building a profile with omitted type uses OAuth, but invalidation only unlinks an explicit OAuth profile token. Inspect the selected profile metadata within authorized recovery scope and test explicit/implicit OAuth plus service-account branches before promising a forced new login. Do not inspect or delete token values just to validate documentation.
 
 ## Supporting sources
 

@@ -5,10 +5,10 @@
 | Question | Answer |
 | --- | --- |
 | **Whom?** | SEO analyst investigating explicitly authorized Search Console properties. |
-| **What?** | Strict destructive-flag parsing is absent. |
+| **What?** | compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. |
 | **Where?** | README.md, pyproject.toml, gsc/server.py. |
 | **Why it exists?** | Search Console multi-account MCP needs this document to show what is observed, what remains unknown and what decision follows. |
-| **Why this approach?** | Strict destructive-flag parsing is absent. |
+| **Why this approach?** | compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. |
 | **Why it matters?** | These limits keep the next task honest and bounded. |
 
 ## Reconstruction finding
@@ -25,7 +25,7 @@ Current main candidate 7b77d88 is the 2026-09-16 CI-gate merge. July 5 added her
 
 ## Unresolved product claims
 
-1. Strict destructive-flag parsing is absent. 2. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 3. Current tests cover guards and registration rather than provider response semantics. 4. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
+1. compare_periods does not clamp row_limit or prove complete pagination; results are bounded comparisons. 2. Current tests cover guards and registration rather than provider response semantics. 3. Cached authenticated status is weaker than live access. Proposed first work is contract/guard regression coverage for the exact requested operation; no current operator-ranked backlog was recovered.
 
 ## Evidence limits and value
 
