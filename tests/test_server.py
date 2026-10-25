@@ -66,6 +66,32 @@ class BatchGuardTests(unittest.TestCase):
 
 
 class DestructiveGuardTests(unittest.TestCase):
+    def test_explicit_true_flags_allow_provider_operation(self):
+        for value in ("true", " TRUE "):
+            for operation, args, kwargs in [
+                ("submit_sitemap", ('https://example.com', 'sitemap.xml'), {}),
+                ("delete_sitemap", ('https://example.com', 'sitemap.xml'), {}),
+            ]:
+                with self.subTest(flag=value, operation=operation):
+                    with mock.patch.dict("os.environ", {"GSC_ALLOW_DESTRUCTIVE": value}, clear=True):
+                        with mock.patch.object(server, "_get_manager") as provider:
+                            result = getattr(server, operation)(*args, **kwargs)
+                    self.assertTrue(result.get("success"))
+                    provider.assert_called_once()
+
+    def test_false_flags_deny_without_initializing_provider(self):
+        for value in ("", "false", "False", "0", "no", "yes", "1"):
+            for operation, args, kwargs in [
+                ("submit_sitemap", ('https://example.com', 'sitemap.xml'), {}),
+                ("delete_sitemap", ('https://example.com', 'sitemap.xml'), {}),
+            ]:
+                with self.subTest(flag=value, operation=operation):
+                    with mock.patch.dict("os.environ", {"GSC_ALLOW_DESTRUCTIVE": value}, clear=True):
+                        with mock.patch.object(server, "_get_manager") as provider:
+                            result = getattr(server, operation)(*args, **kwargs)
+                    self.assertIn("error", result)
+                    provider.assert_not_called()
+
     def test_submit_sitemap_disabled_without_flag(self):
         with mock.patch.dict("os.environ", {}, clear=True):
             result = server.submit_sitemap("https://example.com", "sitemap.xml")

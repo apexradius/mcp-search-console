@@ -409,7 +409,7 @@ def submit_sitemap(
     account: Optional[str] = None,
 ) -> dict:
     """Submit a sitemap to Google Search Console. Requires GSC_ALLOW_DESTRUCTIVE=true."""
-    if not os.environ.get("GSC_ALLOW_DESTRUCTIVE"):
+    if os.environ.get("GSC_ALLOW_DESTRUCTIVE", "").strip().lower() != "true":
         return {"error": "Sitemap submission is disabled. Set GSC_ALLOW_DESTRUCTIVE=true to enable."}
     try:
         service = _get_manager().get_client(account)
@@ -426,7 +426,7 @@ def delete_sitemap(
     account: Optional[str] = None,
 ) -> dict:
     """Delete a sitemap from Google Search Console. Requires GSC_ALLOW_DESTRUCTIVE=true."""
-    if not os.environ.get("GSC_ALLOW_DESTRUCTIVE"):
+    if os.environ.get("GSC_ALLOW_DESTRUCTIVE", "").strip().lower() != "true":
         return {"error": "Sitemap deletion is disabled. Set GSC_ALLOW_DESTRUCTIVE=true to enable."}
     try:
         service = _get_manager().get_client(account)
