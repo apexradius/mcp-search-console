@@ -31,5 +31,15 @@ mcp-search-console-multi = "gsc.server:main"
 packages = ["gsc"]
 
 [tool.ruff]
+# Pinned: newer ruff releases change the default rule set. Run `uvx ruff@0.17.5 check .`;
+# bump this pin and the command together in a dedicated lint-conformance change.
+required-version = "==0.17.5"
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+# MCP tool handlers are the error boundary: every failure is converted into an
+# error payload for the client instead of crashing the server (see _err).
+# retry._extract_reason falls back to str(e) for any unparseable error body.
+"gsc/server.py" = ["BLE001"]
+"gsc/retry.py" = ["BLE001"]

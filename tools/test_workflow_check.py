@@ -1,10 +1,12 @@
 """Behavioral tests of the published workflow-navigation checker."""
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from check_workflow import inspect, ROLES
+from pathlib import Path
+
+from check_workflow import ROLES, inspect
+
 
 class WorkflowChecks(unittest.TestCase):
     def setUp(self):
@@ -48,7 +50,7 @@ class WorkflowChecks(unittest.TestCase):
                     target = '' if same_file else 'docs/workflow/API.md'
                     self.link((body + '\n' if same_file else '') + f'[go]({target}#{fragment})\n')
                     (self.root/'docs/workflow/API.md').write_text(body)
-                    result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, text=True)
+                    result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, check=False, text=True)
                     self.assertEqual(accepted, result.returncode == 0, result.stdout + result.stderr)
                     if not accepted:
                         self.assertIn('missing anchor:', result.stdout)
@@ -66,20 +68,20 @@ class WorkflowChecks(unittest.TestCase):
         for body in ('`[index](INDEX.md)`', '``[index](INDEX.md)``'):
             with self.subTest(body=body):
                 (self.root/'prompt.md').write_text(body)
-                result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, text=True)
+                result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, check=False, text=True)
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn('prompt.md: missing navigation edge to INDEX.md', result.stdout)
     def test_cli_accepts_code_formatted_link_labels(self):
         (self.root/'prompt.md').write_text('Read [`INDEX.md`](INDEX.md).')
         checker = Path(__file__).with_name('check_workflow.py')
-        result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, text=True)
+        result = subprocess.run([sys.executable, str(checker), str(self.root)], capture_output=True, check=False, text=True)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
     def test_optional_readme_navigation_public_cli(self):
         checker = Path(__file__).with_name('check_workflow.py')
         subprocess.run(['git','init','-q',str(self.root)],check=True)
         subprocess.run(['git','-C',str(self.root),'add','.'],check=True)
         command = [sys.executable, str(checker), str(self.root), '--tracked']
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, check=False, text=True)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         for target, accepted in [('prompt.md#missing',False), ('#missing',False),
                 ('missing.md',False), ('Prompt.md',False), ('../other.md',False),
@@ -88,7 +90,7 @@ class WorkflowChecks(unittest.TestCase):
                 with self.subTest(target=target, link=link):
                     (self.root/'README.md').write_text('# Context\n' + link + '\n')
                     subprocess.run(['git','-C',str(self.root),'add','README.md'],check=True)
-                    result = subprocess.run(command, capture_output=True, text=True)
+                    result = subprocess.run(command, capture_output=True, check=False, text=True)
                     self.assertEqual(accepted, result.returncode == 0, result.stdout + result.stderr)
     def test_missing_required_role(self):
         (self.root/'docs/workflow/API.md').unlink()

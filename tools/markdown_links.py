@@ -1,5 +1,6 @@
 """Extract actual CommonMark navigation without rendering or fetching content."""
 from unicodedata import category
+
 from markdown_it import MarkdownIt
 
 _PARSER = MarkdownIt('commonmark').enable('table')

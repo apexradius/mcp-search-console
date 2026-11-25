@@ -1,13 +1,14 @@
 """Exercise both public CLIs against rendered-link and quoted-example boundaries."""
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from check_workflow import ROLES
+from pathlib import Path
+
 from check_review import REVIEWED, STAGES
+from check_workflow import ROLES
 
 CASES = [
     ('plain', '[go](TARGET)', True),
@@ -49,12 +50,12 @@ class NavigationContract(unittest.TestCase):
             for label, body, accepted in CASES:
                 with self.subTest(consumer=consumer, case=label):
                     (root/filename).write_text(body.replace('TARGET', target))
-                    record = dict(version=1, scope='Public CLI navigation fixture', complete=False,
-                        reviewed_at='2026-09-28T00:00:00+00:00', source_revision='a'*40,
-                        files={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in REVIEWED},
-                        stages={name:dict(required=True,status='pending',evidence='Synthetic pending stage') for name in STAGES})
+                    record = {'version': 1, 'scope': 'Public CLI navigation fixture', 'complete': False,
+                        'reviewed_at': '2026-09-28T00:00:00+00:00', 'source_revision': 'a'*40,
+                        'files': {name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in REVIEWED},
+                        'stages': {name:{'required': True,'status': 'pending','evidence': 'Synthetic pending stage'} for name in STAGES}}
                     (root/'docs/workflow/review.json').write_text(json.dumps(record))
-                    result = subprocess.run([sys.executable, str(Path(__file__).with_name(consumer)), str(root)], capture_output=True, text=True)
+                    result = subprocess.run([sys.executable, str(Path(__file__).with_name(consumer)), str(root)], capture_output=True, check=False, text=True)
                     self.assertEqual(accepted, result.returncode == 0, result.stdout+result.stderr)
                     if not accepted:
                         expected = 'missing navigation edge' if consumer == 'check_workflow.py' else 'root README must link'
