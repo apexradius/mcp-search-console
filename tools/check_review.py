@@ -3,12 +3,13 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import re
 import sys
 from datetime import datetime
-from markdown_links import navigation_links
+from pathlib import Path
 from urllib.parse import urlsplit
+
+from markdown_links import navigation_links
 
 REVIEWED = ('README.md', 'prompt.md', 'INDEX.md', 'docs/workflow/HANDOFFS.md')
 STAGES = ('local', 'ci', 'merge', 'deployment', 'knowledge')
@@ -19,15 +20,16 @@ def inspect_review(root):
     try:
         record = json.loads((root/'docs/workflow/review.json').read_text())
         if not isinstance(record, dict):
-            raise ValueError('expected an object')
-    except (OSError, ValueError) as exc:
+            raise TypeError('expected an object')
+    except (OSError, TypeError, ValueError) as exc:
         return [f'review snapshot unavailable: {exc}']
     if type(record.get('version')) is not int or record.get('version') != 1 or type(record.get('complete')) is not bool:
         errors.append('review version must be 1 and complete must be boolean')
     if not isinstance(record.get('scope'), str) or not record['scope'].strip():
         errors.append('review scope is required')
     try:
-        stamp = datetime.fromisoformat(record.get('reviewed_at', '').replace('Z', '+00:00'))
+        # Python 3.10 (supported by the document checkers) rejects a literal 'Z' suffix.
+        stamp = datetime.fromisoformat(record.get('reviewed_at', '').replace('Z', '+00:00'))  # noqa: FURB162
         if stamp.tzinfo is None:
             raise ValueError('timezone missing')
     except (TypeError, ValueError, AttributeError):

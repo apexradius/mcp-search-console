@@ -1,12 +1,14 @@
 """Behavioral fixtures for stale entrypoints and completion overclaims."""
-from copy import deepcopy
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import tempfile
 import unittest
-from check_review import inspect_review, REVIEWED, STAGES
+from copy import deepcopy
+from datetime import UTC, datetime
+from pathlib import Path
+
+from check_review import REVIEWED, STAGES, inspect_review
+
 
 class ReviewChecks(unittest.TestCase):
     def setUp(self):
@@ -16,10 +18,10 @@ class ReviewChecks(unittest.TestCase):
         (self.root/'docs/workflow').mkdir(parents=True)
         for name in REVIEWED:
             (self.root/name).write_text('[Start](prompt.md)\n')
-        self.record = dict(version=1, scope='Synthetic workflow fixture', complete=False,
-            source_revision='a'*40, reviewed_at=datetime.now(timezone.utc).isoformat(),
-            files={name:hashlib.sha256((self.root/name).read_bytes()).hexdigest() for name in REVIEWED},
-            stages={name:dict(required=True,status='pending',evidence='Not yet exercised') for name in STAGES})
+        self.record = {'version': 1, 'scope': 'Synthetic workflow fixture', 'complete': False,
+            'source_revision': 'a'*40, 'reviewed_at': datetime.now(UTC).isoformat(),
+            'files': {name:hashlib.sha256((self.root/name).read_bytes()).hexdigest() for name in REVIEWED},
+            'stages': {name:{'required': True,'status': 'pending','evidence': 'Not yet exercised'} for name in STAGES}}
     def errors(self):
         (self.root/'docs/workflow/review.json').write_text(json.dumps(self.record))
         return inspect_review(self.root)

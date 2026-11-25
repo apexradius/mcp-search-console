@@ -1,6 +1,7 @@
-import time
 import functools
-from typing import Callable, TypeVar
+import time
+from collections.abc import Callable
+from typing import TypeVar
 
 from googleapiclient.errors import HttpError
 

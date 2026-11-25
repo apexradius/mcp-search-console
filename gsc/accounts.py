@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 from googleapiclient.discovery import build
 
@@ -34,7 +33,7 @@ class AccountManager:
         with path.open() as f:
             return json.load(f)
 
-    def _resolve_account(self, account: Optional[str]) -> str:
+    def _resolve_account(self, account: str | None) -> str:
         name = account or self._config.get("default")
         if not name:
             raise AccountError("No account specified and no default set in config.")
@@ -45,7 +44,7 @@ class AccountManager:
             )
         return name
 
-    def get_client(self, account: Optional[str] = None):
+    def get_client(self, account: str | None = None):
         name = self._resolve_account(account)
 
         if name not in self._clients:
@@ -102,7 +101,7 @@ class AccountManager:
         with open(self._config_path, "w") as f:
             json.dump(self._config, f, indent=2)
 
-    def invalidate(self, account: Optional[str] = None) -> None:
+    def invalidate(self, account: str | None = None) -> None:
         """Force re-authentication for an account (clears cached client)."""
         name = self._resolve_account(account)
         self._clients.pop(name, None)

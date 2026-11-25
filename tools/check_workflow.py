@@ -4,13 +4,14 @@
 This validates the document interface, not agent comprehension or product behavior.
 """
 import argparse
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 from urllib.parse import unquote, urlsplit
+
 from markdown_links import heading_anchors, navigation_links
 
-ROLES = 'AGENTS README HANDOFFS SECURITY SECRETS PRD ARCHITECTURE DESIGN WIREFRAMES CODE_STYLE DATABASE API TESTING MAINTENANCE CAPABILITIES REFERENCES REPORT'.split()
+ROLES = ['AGENTS', 'README', 'HANDOFFS', 'SECURITY', 'SECRETS', 'PRD', 'ARCHITECTURE', 'DESIGN', 'WIREFRAMES', 'CODE_STYLE', 'DATABASE', 'API', 'TESTING', 'MAINTENANCE', 'CAPABILITIES', 'REFERENCES', 'REPORT']
 CORE = ['prompt.md', 'INDEX.md'] + [f'docs/workflow/{n}.md' for n in ['AGENTS', 'HANDOFFS', 'TESTING', 'REFERENCES']]
 
 def exact_path(path):
@@ -49,16 +50,19 @@ def inspect(root, tracked=False, budget=3500):
                 errors.append(f'{path.relative_to(root)}: dependency outside repository: {target}')
             elif not exact_path(dest):
                 errors.append(f'{path.relative_to(root)}: missing or wrong-case link: {target}')
-            elif parsed.fragment and dest.suffix == '.md':
-                if unquote(parsed.fragment) not in heading_anchors(dest.read_text()):
-                    errors.append(f'{path.relative_to(root)}: missing anchor: {target}')
+            elif (
+                parsed.fragment
+                and dest.suffix == '.md'
+                and unquote(parsed.fragment) not in heading_anchors(dest.read_text())
+            ):
+                errors.append(f'{path.relative_to(root)}: missing anchor: {target}')
     if not entry_routes_to_index:
         errors.append("prompt.md: missing navigation edge to INDEX.md")
     words = sum(len((root / p).read_text().split()) for p in CORE if (root / p).is_file())
     if words > budget:
         errors.append(f'core reading budget exceeded: {words} > {budget} words')
     if tracked:
-        result = subprocess.run(['git', '-C', str(root), 'ls-files', '-z'], capture_output=True, text=True)
+        result = subprocess.run(['git', '-C', str(root), 'ls-files', '-z'], capture_output=True, check=False, text=True)
         if result.returncode:
             errors.append('tracked validation requires a Git checkout')
         else:
